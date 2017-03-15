@@ -14,7 +14,6 @@ export declare interface XHRConstructor {
 
 }
 
-//new():XHR;
 /**
  * Represents an XHR.
  */
@@ -350,13 +349,22 @@ export declare function callbackParameterNameTransformer(client: HttpClient, pro
 export declare function credentialsTransformer(client: HttpClient, processor: RequestMessageProcessor, message: RequestMessage, xhr: XHR): any;
 
 /**
-* Adds an onprogress callback to the request.
+* Adds an upload.onprogress callback to the request.
 * @param client The http client.
 * @param processor The request message processor.
 * @param message The request message.
 * @param xhr The xhr instance.
 */
 export declare function progressTransformer(client: HttpClient, processor: RequestMessageProcessor, message: RequestMessage, xhr: XHR): any;
+
+/**
+* Adds an onprogress callback to the request.
+* @param client The http client.
+* @param processor The request message processor.
+* @param message The request message.
+* @param xhr The xhr instance.
+*/
+export declare function downloadProgressTransformer(client: HttpClient, processor: RequestMessageProcessor, message: RequestMessage, xhr: XHR): any;
 
 /**
 * Adds a response type transformer to the request.
@@ -424,7 +432,6 @@ export declare class HttpRequestMessage extends RequestMessage {
   constructor(method: string, url: string, content: any, headers?: Headers);
 }
 
-//text, arraybuffer, blob, document
 /**
 * Creates a RequestMessageProcessor for handling HTTP request messages.
 * @return A processor instance for HTTP request messages.
@@ -579,6 +586,13 @@ export declare class RequestBuilder {
   	 * @return The chainable RequestBuilder to use in further configuration of the request.
   	 */
   withProgressCallback(progressCallback: Function): RequestBuilder;
+  
+  /**
+  	 * Sets an download progress callback.
+  	 * @param progressCallback The progress callback function.
+  	 * @return The chainable RequestBuilder to use in further configuration of the request.
+  	 */
+  withDownloadProgressCallback(downloadProgressCallback: Function): RequestBuilder;
   
   /**
   	 * Sets a callback parameter name for JSONP.

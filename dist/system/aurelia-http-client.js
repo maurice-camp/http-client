@@ -72,6 +72,14 @@ System.register(['aurelia-path', 'aurelia-pal'], function (_export, _context) {
 
   _export('progressTransformer', progressTransformer);
 
+  function downloadProgressTransformer(client, processor, message, xhr) {
+    if (message.downloadProgressCallback) {
+      xhr.onprogress = message.downloadProgressCallback;
+    }
+  }
+
+  _export('downloadProgressTransformer', downloadProgressTransformer);
+
   function responseTypeTransformer(client, processor, message, xhr) {
     var responseType = message.responseType;
 
@@ -135,7 +143,7 @@ System.register(['aurelia-path', 'aurelia-pal'], function (_export, _context) {
   _export('createJSONPRequestMessageProcessor', createJSONPRequestMessageProcessor);
 
   function createHttpRequestMessageProcessor() {
-    return new RequestMessageProcessor(PLATFORM.XMLHttpRequest, [timeoutTransformer, credentialsTransformer, progressTransformer, responseTypeTransformer, contentTransformer, headerTransformer]);
+    return new RequestMessageProcessor(PLATFORM.XMLHttpRequest, [timeoutTransformer, credentialsTransformer, progressTransformer, downloadProgressTransformer, responseTypeTransformer, contentTransformer, headerTransformer]);
   }
 
   _export('createHttpRequestMessageProcessor', createHttpRequestMessageProcessor);
@@ -152,12 +160,10 @@ System.register(['aurelia-path', 'aurelia-pal'], function (_export, _context) {
     client.isRequesting = client.pendingRequests.length > 0;
 
     if (!client.isRequesting) {
-      (function () {
-        var evt = DOM.createCustomEvent('aurelia-http-client-requests-drained', { bubbles: true, cancelable: true });
-        setTimeout(function () {
-          return DOM.dispatchEvent(evt);
-        }, 1);
-      })();
+      var evt = DOM.createCustomEvent('aurelia-http-client-requests-drained', { bubbles: true, cancelable: true });
+      setTimeout(function () {
+        return DOM.dispatchEvent(evt);
+      }, 1);
     }
   }
 
@@ -190,7 +196,7 @@ System.register(['aurelia-path', 'aurelia-pal'], function (_export, _context) {
 
       _export('Headers', Headers = function () {
         function Headers() {
-          var headers = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+          var headers = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
           
 
@@ -715,6 +721,12 @@ System.register(['aurelia-path', 'aurelia-pal'], function (_export, _context) {
           });
         };
 
+        RequestBuilder.prototype.withDownloadProgressCallback = function withDownloadProgressCallback(downloadProgressCallback) {
+          return this._addTransformer(function (client, processor, message) {
+            message.downloadProgressCallback = downloadProgressCallback;
+          });
+        };
+
         RequestBuilder.prototype.withCallbackParameterName = function withCallbackParameterName(callbackParameterName) {
           return this._addTransformer(function (client, processor, message) {
             message.callbackParameterName = callbackParameterName;
@@ -837,7 +849,7 @@ System.register(['aurelia-path', 'aurelia-pal'], function (_export, _context) {
         };
 
         HttpClient.prototype.jsonp = function jsonp(url) {
-          var callbackParameterName = arguments.length <= 1 || arguments[1] === undefined ? 'jsoncallback' : arguments[1];
+          var callbackParameterName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'jsoncallback';
 
           return this.createRequest(url).asJsonp(callbackParameterName).send();
         };

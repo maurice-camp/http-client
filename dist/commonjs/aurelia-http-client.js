@@ -11,6 +11,7 @@ exports.timeoutTransformer = timeoutTransformer;
 exports.callbackParameterNameTransformer = callbackParameterNameTransformer;
 exports.credentialsTransformer = credentialsTransformer;
 exports.progressTransformer = progressTransformer;
+exports.downloadProgressTransformer = downloadProgressTransformer;
 exports.responseTypeTransformer = responseTypeTransformer;
 exports.headerTransformer = headerTransformer;
 exports.contentTransformer = contentTransformer;
@@ -29,7 +30,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 var Headers = exports.Headers = function () {
   function Headers() {
-    var headers = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+    var headers = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
     
 
@@ -348,6 +349,12 @@ function progressTransformer(client, processor, message, xhr) {
   }
 }
 
+function downloadProgressTransformer(client, processor, message, xhr) {
+  if (message.downloadProgressCallback) {
+    xhr.onprogress = message.downloadProgressCallback;
+  }
+}
+
 function responseTypeTransformer(client, processor, message, xhr) {
   var responseType = message.responseType;
 
@@ -498,7 +505,7 @@ var HttpRequestMessage = exports.HttpRequestMessage = function (_RequestMessage2
 }(RequestMessage);
 
 function createHttpRequestMessageProcessor() {
-  return new RequestMessageProcessor(_aureliaPal.PLATFORM.XMLHttpRequest, [timeoutTransformer, credentialsTransformer, progressTransformer, responseTypeTransformer, contentTransformer, headerTransformer]);
+  return new RequestMessageProcessor(_aureliaPal.PLATFORM.XMLHttpRequest, [timeoutTransformer, credentialsTransformer, progressTransformer, downloadProgressTransformer, responseTypeTransformer, contentTransformer, headerTransformer]);
 }
 
 var RequestBuilder = exports.RequestBuilder = function () {
@@ -631,6 +638,12 @@ var RequestBuilder = exports.RequestBuilder = function () {
     });
   };
 
+  RequestBuilder.prototype.withDownloadProgressCallback = function withDownloadProgressCallback(downloadProgressCallback) {
+    return this._addTransformer(function (client, processor, message) {
+      message.downloadProgressCallback = downloadProgressCallback;
+    });
+  };
+
   RequestBuilder.prototype.withCallbackParameterName = function withCallbackParameterName(callbackParameterName) {
     return this._addTransformer(function (client, processor, message) {
       message.callbackParameterName = callbackParameterName;
@@ -681,12 +694,10 @@ function trackRequestEnd(client, processor) {
   client.isRequesting = client.pendingRequests.length > 0;
 
   if (!client.isRequesting) {
-    (function () {
-      var evt = _aureliaPal.DOM.createCustomEvent('aurelia-http-client-requests-drained', { bubbles: true, cancelable: true });
-      setTimeout(function () {
-        return _aureliaPal.DOM.dispatchEvent(evt);
-      }, 1);
-    })();
+    var evt = _aureliaPal.DOM.createCustomEvent('aurelia-http-client-requests-drained', { bubbles: true, cancelable: true });
+    setTimeout(function () {
+      return _aureliaPal.DOM.dispatchEvent(evt);
+    }, 1);
   }
 }
 
@@ -772,7 +783,7 @@ var HttpClient = exports.HttpClient = function () {
   };
 
   HttpClient.prototype.jsonp = function jsonp(url) {
-    var callbackParameterName = arguments.length <= 1 || arguments[1] === undefined ? 'jsoncallback' : arguments[1];
+    var callbackParameterName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'jsoncallback';
 
     return this.createRequest(url).asJsonp(callbackParameterName).send();
   };

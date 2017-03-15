@@ -297,6 +297,12 @@ export function progressTransformer(client, processor, message, xhr) {
   }
 }
 
+export function downloadProgressTransformer(client, processor, message, xhr) {
+  if (message.downloadProgressCallback) {
+    xhr.onprogress = message.downloadProgressCallback;
+  }
+}
+
 export function responseTypeTransformer(client, processor, message, xhr) {
   let responseType = message.responseType;
 
@@ -424,7 +430,7 @@ export let HttpRequestMessage = class HttpRequestMessage extends RequestMessage 
 };
 
 export function createHttpRequestMessageProcessor() {
-  return new RequestMessageProcessor(PLATFORM.XMLHttpRequest, [timeoutTransformer, credentialsTransformer, progressTransformer, responseTypeTransformer, contentTransformer, headerTransformer]);
+  return new RequestMessageProcessor(PLATFORM.XMLHttpRequest, [timeoutTransformer, credentialsTransformer, progressTransformer, downloadProgressTransformer, responseTypeTransformer, contentTransformer, headerTransformer]);
 }
 
 export let RequestBuilder = class RequestBuilder {
@@ -555,6 +561,12 @@ export let RequestBuilder = class RequestBuilder {
     });
   }
 
+  withDownloadProgressCallback(downloadProgressCallback) {
+    return this._addTransformer(function (client, processor, message) {
+      message.downloadProgressCallback = downloadProgressCallback;
+    });
+  }
+
   withCallbackParameterName(callbackParameterName) {
     return this._addTransformer(function (client, processor, message) {
       message.callbackParameterName = callbackParameterName;
@@ -644,7 +656,7 @@ export let HttpClient = class HttpClient {
     let ii;
 
     if (!createProcessor) {
-      throw new Error(`No request message processor factory for ${ requestMessage.constructor }.`);
+      throw new Error(`No request message processor factory for ${requestMessage.constructor}.`);
     }
 
     processor = createProcessor();
